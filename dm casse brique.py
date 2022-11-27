@@ -1,140 +1,124 @@
-
-    
-# on rajoute random
 import pyxel, random
 
-# taille de la fenetre 128x128 pixels
-# ne pas modifier
-pyxel.init(300, 300, title="Nuit du c0de")
 
-# position initiale du vaisseau
-# (origine des positions : coin haut gauche)
-vaisseau_x = 100
-vaisseau_y = 250
-velocity = 5
+# screen's size
+screen_width = 300
+screen_height = 300
+pyxel.init(screen_width, screen_height)
 
-# vies
-vies = 1
+# variables linked to the platform
+platform_x = 180
+platform_y = 260
+platform_velocity = 10
+platform_color = 5
+platform_sideWidth = 20
+platform_width = 60
+platform_height = 20
 
-# initialisation des tirs
-tirs_liste = []
+# variables linked to the ball 
+ball_x = 150
+ball_y = 150
+ball_totalVelocity = -8
+ball_velocity_x = ball_totalVelocity
+ball_velocity_y = ball_totalVelocity
+ball_radius = 7
 
-# initialisation des ennemis
-ennemis_liste = []
+# definition of the walls for ball's rebound
+wall_Right = screen_width
+wall_Left = 0
+wall_Down = screen_height
+wall_Up = 0
 
-rang = [r for r in range(0, 61, 20)]
-print(rang)
-placement = [p for p in range(40,221,40)]
-print(placement)
 
-def vaisseau_deplacement(x, y):
-    """déplacement avec les touches de directions"""
+# nombres de vies
+health_points = 1
+
+bricks_x = [20, 50, 80, 110, 140]
+bricks_y = [50, 100]
+bricks_list = []
+
+
+
+
+# fonction which defines de movement of the platform : key right/left
+def platform_move(x, y):
 
     if pyxel.btn(pyxel.KEY_RIGHT):
-        if (x < 220) :
-            x = x + velocity
+        if ((x + platform_velocity) < (screen_width - platform_width - platform_sideWidth + 5)) :
+            x = x + platform_velocity
     if pyxel.btn(pyxel.KEY_LEFT):
-        if (x > 0) :
-            x = x - velocity
+        if (x > platform_sideWidth) :
+            x = x - platform_velocity
     
     return x, y
 
 
-
-def tirs_creation(x, y, tirs_liste):
-    """création d'un tir avec la barre d'espace"""
-
-    # btnr pour eviter les tirs multiples
-    if pyxel.btnr(pyxel.KEY_SPACE):
-        tirs_liste.append([x+4, y-4])
-    return tirs_liste
-
-def tirs_deplacement(tirs_liste):
-    """déplacement des tirs vers le haut et suppression s'ils sortent du cadre"""
-
-    for tir in tirs_liste:
-        tir[1] -= 1
-        if  tir[1]<-8:
-            tirs_liste.remove(tir)
-    return tirs_liste
-
-
-def ennemis_creation(ennemis_liste):
-    """création aléatoire des ennemis"""
-
-    for i in rang:
-        for a in placement:
-            ennemis_liste.append([random.randint(40, 220), 10+i])
-    return ennemis_liste
-
+def ball_move(x, y, a, b, r):
+    
+    x = x + a
+    y = y + b
+    if (x + r + a) > wall_Right or (x - r + a) < wall_Left:
+        a = (- a)
+        
+    elif (y - r + b) < wall_Up or (y + r + b) > wall_Down:
+        b = (- b)
+    
+    elif (y + r + b) > platform_y and (x + r + a) < (platform_x + platform_width) and (x - r + a) > platform_x:
+        b = (- b)
+    
+    elif (y - r + b) > platform_y and (x - r + a) < (platform_x + platform_width) and (x + r + a) > platform_x:
+        b = (- b)
+    
+    elif (y + r + b) > platform_y and (x + r + a) < (platform_x) and (x - r + a) > (platform_x - platform_sideWidth):
+        a = (- a)
+        b = (- b)
+    
+    elif (y + r + b) > platform_y and (x + r + a) < (platform_x + platform_width + platform_sideWidth) and (x - r + a) > (platform_x + platform_width):
+        a = (- a)
+        b = (- b)
+    
+    return x, y, a, b, r
 
 
 
 
 
-
-
-def ennemis_suppression():
-    """disparition d'un ennemi et d'un tir si contact"""
-
-    for ennemi in ennemis_liste:
-        for tir in tirs_liste:
-            if ennemi[0] <= tir[0]+1 and ennemi[0]+8 >= tir[0] and ennemi[1]+8 >= tir[1]:
-                ennemis_liste.remove(ennemi)
-                
-
-# =========================================================
-# == UPDATE
-# =========================================================
 def update():
     """mise à jour des variables (30 fois par seconde)"""
 
-    global vaisseau_x, vaisseau_y, tirs_liste, ennemis_liste, vies
+    global platform_x, platform_y, vies, ball_x, ball_y, ball_velocity_x, ball_velocity_y, ball_radius
 
     # mise à jour de la position du vaisseau
-    vaisseau_x, vaisseau_y = vaisseau_deplacement(vaisseau_x, vaisseau_y)
-
-    # creation des tirs en fonction de la position du vaisseau
-    tirs_liste = tirs_creation(vaisseau_x, vaisseau_y, tirs_liste)
-
-    # mise a jour des positions des tirs
-    tirs_liste = tirs_deplacement(tirs_liste)
-
-    # creation des ennemis
-    ennemis_liste = ennemis_creation(ennemis_liste)
-
-
-
-    # suppression des ennemis et tirs si contact
-    ennemis_suppression()
-
+    platform_x, platform_y = platform_move(platform_x, platform_y)
     
+    #déplacement de la balle
+    ball_x, ball_y, ball_velocity_x, ball_velocity_y, ball_radius = ball_move(ball_x, ball_y, ball_velocity_x, ball_velocity_y, ball_radius)
 
-# =========================================================
-# == DRAW
-# =========================================================
+
 def draw():
     """création des objets (30 fois par seconde)"""
-
-    # vide la fenetre
+    
+    # erase the screen
     pyxel.cls(0)
 
-    # si le vaisseau possede des vies le jeu continue
-    if vies > 0:    
+    # if the player still have health points
+    if health_points > 0:    
 
-        # vaisseau (carre 8x8)
-        pyxel.rect(vaisseau_x, vaisseau_y, 80, 8, 3)
+        # platform 
+        pyxel.rect(platform_x, platform_y, platform_width, platform_height, platform_color)
+        pyxel.tri(platform_x + platform_width, platform_y, platform_x + platform_width, platform_y + platform_height - 1, platform_x + platform_width + platform_sideWidth, platform_y + platform_height - 1, platform_color)
+        pyxel.tri(platform_x, platform_y, platform_x, platform_y + platform_height - 1, platform_x - platform_sideWidth, platform_y + platform_height - 1, platform_color)
 
-        # tirs
-        for tir in tirs_liste:
-            pyxel.rect(tir[0], tir[1], 1, 4, 10)
-
-        # ennemis
-        for ennemi in ennemis_liste:
-            pyxel.rect(ennemi[0], ennemi[1], 40, 20, 1)
-            pyxel.rect(ennemi[0], ennemi[1], 28, 18, 9)
-
-    # sinon: GAME OVER
+        # ball
+        pyxel.circ(ball_x, ball_y, ball_radius, 5)
+        
+        for i in bricks_y:
+            for j in bricks_x:
+                pyxel.rect(j, i, 8, 8, 8)
+        
+    
+       
+    # else: GAME OVER
     else:
 
         pyxel.text(50,64, 'GAME OVER', 7)
