@@ -12,12 +12,12 @@ pyxel.init(screen_width, screen_height)
 
 
 # variables liées à la plateforme
-platform_velocity = 7
-platform_color = 6
-platform_sideWidth = 40
-platform_width = 50
-platform_height = 16
-platform_downHeight = 3
+platform_velocity = 12
+platform_color = 5
+platform_sideWidth = 30
+platform_width = 40
+platform_height = 10
+platform_downHeight = 2
 platform_altitude = 10
 platform_x = (screen_width/2) - (platform_width/2)
 platform_y = screen_height - platform_height - platform_altitude
@@ -26,14 +26,14 @@ platform_y = screen_height - platform_height - platform_altitude
 # variables liées à la balle
 ball_x = screen_width / 2
 ball_y = screen_height / 2
-ball_totalVelocity = 4
+ball_totalVelocity = 2
 ball_velocity_x = (- ball_totalVelocity)
 ball_velocity_y = (- ball_totalVelocity)
-ball_radius = 5
+ball_radius = 3
 ball_color = 5
 ball_run = False
-ball_acceleration_x = score
-ball_acceleration_y = score
+ball_acceleration_x = - 1
+ball_acceleration_y = - 1
 
 
 # coordonnées des murs
@@ -77,8 +77,6 @@ bricks_list = []
 brick_start = True
 
 
-
-
 # variables liées au jeu
 level_1 = True
 level_2 = False
@@ -91,25 +89,36 @@ game = True
 #___________________________________________________________________________________#
 # fonctions du casse-brique
 
-# fonction qui permet le lancement du jeu
-def game_start():
-    if pyxel.btnr(pyxel.KEY_RIGHT):
-        game_start = True
-
 
 # fonction qui définit le mouvement de la plateforme
 def platform_move(x, y):
 
     if pyxel.btn(pyxel.KEY_RIGHT):
-        if x  < (screen_width - platform_width - platform_sideWidth - 3) :
+        if x  < (screen_width - platform_width - platform_sideWidth) :
             x = x + platform_velocity
     if pyxel.btn(pyxel.KEY_LEFT):
-        if x > (platform_sideWidth + 3) :
+        if x > (platform_sideWidth) :
             x = x - platform_velocity
     
     return x, y
 
 
+# fonction qui définit l'accélaration de la balle
+def ball_acceleration(ball_velocity_x, ball_velocity_y, ball_acceleration_x, ball_acceleration_y):
+    if (pyxel.frame_count % 2000 == 0):
+        if ball_acceleration_x > 0:
+            ball_acceleration_x = ball_acceleration_x + 1
+            
+        if ball_acceleration_x < 0:
+            ball_acceleration_x = ball_acceleration_x - 1
+            
+        if ball_acceleration_y > 0:
+            ball_acceleration_y = ball_acceleration_y + 1
+            
+        if ball_acceleration_y < 0:
+            ball_acceleration_y = ball_acceleration_y - 1
+            
+    return ball_velocity_x, ball_velocity_y, ball_acceleration_x, ball_acceleration_y
 
 
 #fonction qui définit le mouvement de la balle
@@ -123,10 +132,12 @@ def ball_move(x, y, a, b, r, health_points, score, ball_run, ball_acceleration_x
             if (y + r + b) >= brick[1] and (y - r + b) <= (brick[1] + brick_height) and (x + r + a) >= brick[0] and (x - r + a) <= (brick[0] + brick_width):
                 if (x + r + a) > (brick[0] + r) and (x - r + a) < (brick[0] + brick_width - r):
                     b = (- b)
+                    ball_acceleration_y = (- ball_acceleration_y)
                     score += 1
         
                 else:
                     a = (- a)
+                    ball_acceleration_x = (- ball_acceleration_x)
                     score += 1
                     
                 if pyxel.pget(brick[0] + 1, brick[1] + 1) == brick_color:
@@ -172,8 +183,8 @@ def ball_move(x, y, a, b, r, health_points, score, ball_run, ball_acceleration_x
             ball_run = False
                 
             
-        # milieu platforme
-        elif ((y + r + b) > platform_y and (x + a - r) < (platform_x + platform_width) and (x + a + r) > platform_x) or ((y + r + b) > platform_y and (x + r + a) < (platform_x) and (x - r + a) > (platform_x - platform_sideWidth) and pyxel.pget((x + a), (y + b)) == platform_color) or ((y + r + b) > platform_y and (x + r + a) < (platform_x + platform_width + platform_sideWidth) and (x - r + a) > (platform_x + platform_width) and pyxel.pget((x + a), (y + b)) == platform_color):
+        # rebond plateforme
+        elif ((y + r + b) > platform_y and (x + a - r) <= (platform_x + platform_width) and (x + a + r) >= platform_x) or ((y + r + b) > platform_y and (x + r + a) < (platform_x) and (x - r + a) > (platform_x - platform_sideWidth) and pyxel.pget((x + a), (y + b)) == platform_color) or ((y + r + b) > platform_y and (x + r + a) < (platform_x + platform_width + platform_sideWidth) and (x - r + a) > (platform_x + platform_width) and pyxel.pget((x + a), (y + b)) == platform_color):
             b = (-b)
             ball_acceleration_y = (- ball_acceleration_y)
             
@@ -218,7 +229,7 @@ def update():
     """mise à jour des variables (30 fois par seconde)"""
 
     # appelle les variables et les listes nécessaires
-    global health_points, rang, brick_level, ball_totalVelocity, platform_x, platform_y, vies, ball_x, ball_y, ball_velocity_x, ball_velocity_y, ball_radius, b_x, b_y, bricks_list, brick_start, game_start, brick_height, brick_width, score, ball_run, ball_acceleration_x, ball_acceleration_y, bricks_broken, bricks_niveau1, bricks_niveau2, level_2, level_3
+    global health_points, rang, brick_level, ball_totalVelocity, platform_x, platform_y, vies, ball_x, ball_y, ball_velocity_x, ball_velocity_y, ball_radius, b_x, b_y, bricks_list, brick_start, brick_height, brick_width, score, ball_run, ball_acceleration_x, ball_acceleration_y, bricks_broken, bricks_niveau1, bricks_niveau2, level_2, level_3
     
     
     # au lancement du jeu appuyer sur espace pour commencer le déplacement de la balle
@@ -233,6 +244,8 @@ def update():
 
     # mise à jour de la position du vaisseau
     platform_x, platform_y = platform_move(platform_x, platform_y)
+    
+    ball_velocity_x, ball_velocity_y, ball_acceleration_x, ball_acceleration_y = ball_acceleration(ball_velocity_x, ball_velocity_y, ball_acceleration_x, ball_acceleration_y)
     
     #déplacement de la balle
     ball_x, ball_y, ball_velocity_x, ball_velocity_y, ball_radius, health_points, score, ball_run, ball_acceleration_x, ball_acceleration_y, bricks_broken, level_2, level_3 = ball_move(ball_x, ball_y, ball_velocity_x, ball_velocity_y, ball_radius, health_points, score, ball_run, ball_acceleration_x, ball_acceleration_y, bricks_broken, level_2, level_3)
@@ -300,7 +313,7 @@ def draw():
         if bricks_broken == 63:
             game = False
     
-    elif game == False:
+    elif game == False: 
         pyxel.text(142,150, 'BRAVO TU AS REUSSI LES 3 NIVEAUX', 7)
         
     # si les vies ne sont pas supérieures à 0  
@@ -312,3 +325,4 @@ def draw():
 
 # lancement du jeu _____________________________________________________________________________________________________________________________
 pyxel.run(update, draw)
+
